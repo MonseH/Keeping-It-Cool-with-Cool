@@ -1,4 +1,4 @@
-/*
+//*
   LiquidCrystal Library - Hello World
  
  Demonstrates the use a 16x2 LCD display.  The LiquidCrystal
@@ -80,18 +80,16 @@ void loop() {
   {
     pinMode(led, OUTPUT);
     digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)
-    delay(1000);               // wait for a second
     digitalWrite(ledW, LOW);    // turn the LED off by making the voltage LOW
-    delay(1000); 
   }
   else if(degreesF > 88.0)
   {
     pinMode(led, OUTPUT);
     pinMode(ledW, OUTPUT);
     digitalWrite(ledW, HIGH);
-    delay(1000);               // wait for a second
+    //delay(1000);               // wait for a second
     digitalWrite(led, LOW);    // turn the LED off by making the voltage LOW
-    delay(1000);
+    //delay(1000);
 //    pinMode(led, OUTPUT);
 //    digitalWrite(led, LOW);
 //    delay(1000);               // wait for a second
