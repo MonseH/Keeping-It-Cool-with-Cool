@@ -37,11 +37,18 @@
 
 // include the library code:
 #include <LiquidCrystal.h>
+#include <SoftwareSerial.h>
 
+const int IMP_SERIAL_RX = 8;
+const int IMP_SERIAL_TX = 9;
+
+// Create an instance of software serial.
+SoftwareSerial impSerial(IMP_SERIAL_RX, IMP_SERIAL_TX);
 // initialize the library with the numbers of the interface pins
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
-int led = 1;
+int led = 7;
 int outputpin = 0;
+int ledW = 6;
 //float temp;
 
 void setup() {
@@ -50,6 +57,7 @@ void setup() {
   // Print a message to the LCD.
   //lcd.print("hello, world!");
   Serial.begin(9600);
+  impSerial.begin(19200);
 }
 
 void loop() {
@@ -58,11 +66,7 @@ void loop() {
   lcd.setCursor(0, 1);
   // print the number of seconds since reset:
   //lcd.print(millis()/1000);
-  pinMode(led, OUTPUT);
-  digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(1000);               // wait for a second
-  digitalWrite(led, LOW);    // turn the LED off by making the voltage LOW
-  delay(1000); 
+  
   float voltage, degreesC, degreesF;
   voltage = getVoltage(outputpin);
   degreesC = (voltage - 0.5) * 100.0;
@@ -71,9 +75,31 @@ void loop() {
   //lcd.print(voltage);
   //lcd.print("  deg C: ");
   //lcd.print(degreesC);
+  
+  if(degreesF <= 88.0)
+  {
+    pinMode(led, OUTPUT);
+    digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)
+    delay(1000);               // wait for a second
+    digitalWrite(ledW, LOW);    // turn the LED off by making the voltage LOW
+    delay(1000); 
+  }
+  else if(degreesF > 88.0)
+  {
+    pinMode(led, OUTPUT);
+    pinMode(ledW, OUTPUT);
+    digitalWrite(ledW, HIGH);
+    delay(1000);               // wait for a second
+    digitalWrite(led, LOW);    // turn the LED off by making the voltage LOW
+    delay(1000);
+//    pinMode(led, OUTPUT);
+//    digitalWrite(led, LOW);
+//    delay(1000);               // wait for a second
+  }    
   lcd.print("Fahrenheit: ");
   lcd.println(degreesF);
-
+  
+  impSerial.write(degreesF);
   delay(1000); // repeat once per second (change as you wish!)
 
 //  boolean forever = true;
