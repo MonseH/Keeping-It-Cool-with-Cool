@@ -1,0 +1,16 @@
+function readSerial() {
+    local temp = blob();
+    local data = serial.read();
+    while (data >= 0) {
+        temp.writen(data, 'b');
+        data = serial.read();
+    }
+    local temperature = temp[0];
+    // server.log(format("temperature: %i" temperature));
+    // Send message to agent
+    agent.send("update", temperature);
+}
+
+serial <- hardware.uart57;
+serial.configure(19200, 8, PARITY_NONE, 1, NO_CTSRTS, readSerial);
+
