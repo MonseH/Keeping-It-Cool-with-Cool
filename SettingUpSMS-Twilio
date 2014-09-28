@@ -1,0 +1,110 @@
+//class Twilio { ... }    
+//twilio <- Twilio(AC11b9876176e886c80af8206bf2e834a0, f2885253e353481f1ab031cf077bb382, +18312961386);
+const TWILIO_SID = "AC11b9876176e886c80af8206bf2e834a0";		// Your Twilio Account SID
+const TWILIO_AUTH = "f2885253e353481f1ab031cf077bb382";		// Your Twilio Auth Token
+const TWILIO_NUM = "+18312961386";		// Your Twilio Phone Number
+
+class Twilio {
+    _baseUrl = "https://api.twilio.com/2010-04-01/Accounts/";
+    
+    _accountSid = null;
+    _authToken = null;
+    _phoneNumber = null;
+    
+    constructor(accountSid, authToken, phoneNumber) {
+        _accountSid = accountSid;
+        _authToken = authToken;
+        _phoneNumber = phoneNumber;
+    }
+    
+    function send(to, message, callback = null) {
+        local url = _baseUrl + _accountSid + "/SMS/Messages.json"
+        
+        local auth = http.base64encode(_accountSid + ":" + _authToken);
+        local headers = { "Authorization": "Basic " + auth };
+        
+        local body = http.urlencode({
+            From = _phoneNumber,
+            To = to,
+            Body = message
+        });
+        
+        local request = http.post(url, headers, body);
+        if (callback == null) return request.sendsync();
+        else request.sendasync(callback);
+    }
+    
+    function Respond(resp, message) {
+        local data = { Response = { Message = message } };
+        local body = xmlEncode(data);
+        
+        resp.header("Content-Type", "text/xml");
+        
+        
+        server.log(body);
+        
+        resp.send(200, body);
+    }
+    
+    function xmlEncode(data, version="1.0", encoding="UTF-8") {
+        return format("<?xml version=\"%s\" encoding=\"%s\" ?>%s", version, encoding, _recursiveEncode(data))
+    }
+
+    /******************** Private Function (DO NOT CALL) ********************/
+    function _recursiveEncode(data) {
+        local s = "";
+        foreach(k, v in data) {
+            if (typeof(v) == "table" || typeof(v) == "array") {
+                s += format("<%s>%s</%s>", k.tostring(), _recursiveEncode(v), k.tostring());
+            } 
+            else { 
+                s += format("<%s>%s</%s>", k.tostring(), v.tostring(), k.tostring());;
+            }
+        }
+        return s
+    }
+}
+
+twilio <- Twilio(TWILIO_SID, TWILIO_AUTH, TWILIO_NUM);
+
+
+// processing messages
+http.onrequest(function(req, resp) {
+    local path = req.path.tolower();
+    if (path == "/twilio" || path == "/twilio/") {
+        // twilio request handler
+        try {
+            local data = http.urldecode(req.body);
+            twilio.Respond(resp, "You just said '" + data.Body + "'");
+        } catch(ex) {
+            local message = "Uh oh, something went horribly wrong: " + ex;
+            twilio.Respond(resp, message);
+        }
+    } else {
+        // default request handler
+        resp.send(200, "OK");
+    }
+});
+
+wasLastTempTooLow <- false;
+
+device.on("update", function(temperature) {
+    currentTempIsTooLow <- temperature <= 88;
+    if(wasLastTempTooLow != currentTempIsTooLow )
+    {
+        if (currentTempIsTooLow) {
+            server.log(format("temperature: %i" temperature));
+             // sending a message + " - " + 
+            numberToSendTo <- "+18312614950"
+            twilio.send(numberToSendTo, "Danger, temperature is too low!\nWarm up!", function(resp) { server.log(resp.statuscoderesp.body); });
+        }
+          else {
+            server.log(format("temperature: %i" temperature));
+            // sending a message + " - " + 
+            numberToSendTo <- "+18312614950"
+            twilio.send(numberToSendTo, "Your temperature is ok!", function(resp) { server.log(resp.statuscoderesp.body); });
+    }
+    }
+    wasLastTempTooLow = currentTempIsTooLow;  
+  
+});
