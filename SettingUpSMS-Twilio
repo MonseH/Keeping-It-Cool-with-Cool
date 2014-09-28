@@ -1,3 +1,70 @@
+// Log a "hello world" statement to make sure you're online.
+// This should show up in the Imp IDE logs.
+server.log("hello from the agent!");
+
+/*****************************************************************************
+For more information on how to connect your event data to KeenIO, check out
+ https://github.com/electricimp/reference/tree/master/webservices/keenio
+ *****************************************************************************/
+
+class KeenIO {
+    _baseUrl = "https://api.keen.io/3.0/projects/";
+
+    _projectId = null;
+    _apiKey = null;
+
+    constructor(projectId, apiKey) {
+        _projectId = projectId;
+        _apiKey = apiKey;
+    }
+
+    /***************************************************************************
+    * Parameters:
+    *   eventCollection - the name of the collection you are pushing data to
+    *   data - the data you are pushing
+    *   cb - an optional callback to execute upon completion
+    *
+    * Returns:
+    *   HTTPResponse - if a callback was NOT specified
+    *   None - if a callback was specified
+    ***************************************************************************/
+    function sendEvent(eventCollection, data, cb = null) {
+        local url = _buildUrl(eventCollection);
+        local headers = {
+            "Content-Type": "application/json"
+        };
+        local encodedData = http.jsonencode(data);
+        server.log(encodedData);
+
+        local request = http.post(url, headers, encodedData);
+
+        // if a callback was specificed
+        if (cb == null) {
+            return request.sendsync();
+        } else {
+            request.sendasync(cb);
+        }
+    }
+
+    /*************** Private Functions - (DO NOT CALL EXTERNALLY) ***************/
+    function _buildUrl(eventCollection, projectId = null, apiKey = null) {
+        if (projectId == null) projectId = _projectId;
+        if (apiKey == null) apiKey = _apiKey;
+
+
+        local url = _baseUrl + projectId + "/events/" + eventCollection + "?api_key=" + apiKey;
+        return url;
+    }
+}
+
+/**************************** Begin KeenIO logging here *************************/
+
+const KEEN_PROJECT_ID = "5428899ac9e163462f82e647";
+const KEEN_WRITE_API_KEY = "e1bae47aa53efb0ac88d1c95f3993418a45a1e2c446634e314b588d8da97f81869002cab608129c279daa8bc76bf363fac42ac2df0b305c8dc1054a219f96aabaed46f4b3eb7484346a5c5d33822dc3dd7af3556a18773a1fa91feb69a0e052ee86d24e82b1aa94ed2b7ba5a88c7b606";
+
+keen <- KeenIO(KEEN_PROJECT_ID, KEEN_WRITE_API_KEY);
+
+
 //class Twilio { ... }    
 //twilio <- Twilio(AC11b9876176e886c80af8206bf2e834a0, f2885253e353481f1ab031cf077bb382, +18312961386);
 const TWILIO_SID = "AC11b9876176e886c80af8206bf2e834a0";		// Your Twilio Account SID
@@ -106,5 +173,14 @@ device.on("update", function(temperature) {
     }
     }
     wasLastTempTooLow = currentTempIsTooLow;  
-  
+    server.log(format("temperature: %i" temperature));
+    local eventData = {
+        temp = temperature,
+        belowThreshold = currentTempIsTooLow
+    };
+
+    // send an event synchronously
+    local result = keen.sendEvent("temperature", eventData);
+    server.log(result.statuscode + ": " + result.body);
+
 });
